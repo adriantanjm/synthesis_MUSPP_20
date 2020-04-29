@@ -1,0 +1,325 @@
+---
+title: "Singa-poreans x Singa-use Plastics"
+output: html_document
+runtime: shiny
+theme: prettydoc
+---
+## Insights from analysis of Google Search Terms on Singaporeans’ Attitudes and Behaviours towards Single-use Plastics for F&B in 2019
+
+### Written by MUSPP'20 team: Adrian, Gareth, Jeanette and Jolin 
+### With guidance from Synthesis team: Harriet, Ashvinder, Aakash and Wei Quan
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(viridis)
+library(hrbrthemes)
+library(htmltools)
+library(htmlwidgets)
+library(metricsgraphics)
+library(RColorBrewer)
+library(highcharter)
+library(shiny)
+search_terms <- read_tsv("datasets/search_terms.tsv")
+search_terms_2 <- read_csv("datasets/supl.csv")
+```
+
+```{r Setting Aesthetics, include=FALSE}
+royal <- hc_theme(
+  colors = c('#9A8822', '#F5CDB4', '#F8AFA8', '#FDDDA0', '#74A089'),
+  chart = list(
+    backgroundColor = NULL
+  ),
+  title = list(
+    style = list(
+      color = '#333333',
+      fontFamily = "Josefin Sans"
+    )
+  ),
+  subtitle = list(
+    style = list(
+      color = '#666666',
+      fontFamily = "Josefin Sans"
+    )
+  ),
+  legend = list(
+    itemStyle = list(
+      fontFamily = 'Josefin Sans',
+      color = 'black'
+    ),
+    itemHoverStyle = list(
+      color = 'gray'
+    )   
+  )
+)
+
+
+```
+
+```{css, echo=FALSE}
+h1{
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 20px;
+  color:#9A8822;
+    font-weight: bold;
+    text-align: center;
+}
+
+h2{
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 16px;
+  color:#9A8822;
+        font-weight: bold;
+    text-align: center;
+}
+
+h3{
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 16px;
+  color:#000000;
+    text-align: center;
+  font-weight: bold;
+}
+
+h4{
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 16px;
+  color:#000000;
+    text-align: left;
+  font-weight: bold;
+}
+
+p {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 14px;
+}
+```
+
+```{r reusables, include=FALSE}
+reusable <- search_terms %>% filter(grepl("reusable|reusables",Keywords))
+reusable_fnb <- search_terms %>% 
+  filter(grepl("reusable|reusables",Keywords)) %>% 
+  filter(grepl("drink|coffee|tea|water|bottle|nespresso|fruit|lunch|containers|cutlery|ice cream|food|sandwich|snack|snacks|grocery|straws|mug|bread|tumbler|dolce|pizza|plates|utensils|ziplock|yoghurt|veggie|starbucks|juice|cup|cups",Keywords)) %>%
+    group_by(Keywords) %>%
+  summarise(`Feb 2019` = sum(`Search Volume (Feb 2019)`), 
+            `Mar 2019` = sum(`Search Volume (Mar 2019)`), 
+            `Apr 2019` = sum(`Search Volume (Apr 2019)`),
+            `May 2019` = sum(`Search Volume (May 2019)`),
+            `Jun 2019` = sum(`Search Volume (Jun 2019)`),
+            `Jul 2019` = sum(`Search Volume (Jul 2019)`),
+            `Aug 2019` = sum(`Search Volume (Aug 2019)`),
+            `Sep 2019` = sum(`Search Volume (Sep 2019)`),
+            `Oct 2019` = sum(`Search Volume (Oct 2019)`),
+            `Nov 2019` = sum(`Search Volume (Nov 2019)`),
+            `Dec 2019` = sum(`Search Volume (Dec 2019)`),
+            `Jan 2020` = sum(`Search Volume (Jan 2020)`))
+reusable_fnb_summed <- reusable_fnb %>% summarise(`Feb 2019` = sum(`Feb 2019`), 
+            `Mar 2019` = sum(`Mar 2019`), 
+            `Apr 2019` = sum(`Apr 2019`),
+            `May 2019` = sum(`May 2019`),
+            `Jun 2019` = sum(`Jun 2019`),
+            `Jul 2019` = sum(`Jul 2019`),
+            `Aug 2019` = sum(`Aug 2019`),
+            `Sep 2019` = sum(`Sep 2019`),
+            `Oct 2019` = sum(`Oct 2019`),
+            `Nov 2019` = sum(`Nov 2019`),
+            `Dec 2019` = sum(`Dec 2019`),
+            `Jan 2020` = sum(`Jan 2020`))
+reusable_fnb_summed <- as.data.frame(t(reusable_fnb_summed))
+reusable_fnb_summed <- cbind(month = rownames(reusable_fnb_summed), reusable_fnb_summed)
+reusable_fnb_summed <- reusable_fnb_summed %>% rename(total_reusable_fnb = V1) 
+class(reusable_fnb_summed$month)
+reusable_fnb_summed$month <- factor(reusable_fnb_summed$month, levels = reusable_fnb_summed$month)
+reusable_fnb_cups <- search_terms %>% 
+  filter(grepl("reusable|reusables",Keywords)) %>% 
+  filter(grepl("cup|mug|tumbler",Keywords)) %>%
+    group_by(Keywords) %>%
+  summarise(`Feb 2019` = sum(`Search Volume (Feb 2019)`), 
+            `Mar 2019` = sum(`Search Volume (Mar 2019)`), 
+            `Apr 2019` = sum(`Search Volume (Apr 2019)`),
+            `May 2019` = sum(`Search Volume (May 2019)`),
+            `Jun 2019` = sum(`Search Volume (Jun 2019)`),
+            `Jul 2019` = sum(`Search Volume (Jul 2019)`),
+            `Aug 2019` = sum(`Search Volume (Aug 2019)`),
+            `Sep 2019` = sum(`Search Volume (Sep 2019)`),
+            `Oct 2019` = sum(`Search Volume (Oct 2019)`),
+            `Nov 2019` = sum(`Search Volume (Nov 2019)`),
+            `Dec 2019` = sum(`Search Volume (Dec 2019)`),
+            `Jan 2020` = sum(`Search Volume (Jan 2020)`))
+reusable_fnb_cups_summed <- reusable_fnb_cups %>% 
+  summarise(`Feb 2019` = sum(`Feb 2019`), 
+            `Mar 2019` = sum(`Mar 2019`), 
+            `Apr 2019` = sum(`Apr 2019`),
+            `May 2019` = sum(`May 2019`),
+            `Jun 2019` = sum(`Jun 2019`),
+            `Jul 2019` = sum(`Jul 2019`),
+            `Aug 2019` = sum(`Aug 2019`),
+            `Sep 2019` = sum(`Sep 2019`),
+            `Oct 2019` = sum(`Oct 2019`),
+            `Nov 2019` = sum(`Nov 2019`),
+            `Dec 2019` = sum(`Dec 2019`),
+            `Jan 2020` = sum(`Jan 2020`))
+reusable_fnb_cups_summed <- as.data.frame(t(reusable_fnb_cups_summed))
+reusable_fnb_cups_summed <- cbind(month = rownames(reusable_fnb_cups_summed), reusable_fnb_cups_summed)
+reusable_fnb_cups_summed <- reusable_fnb_cups_summed %>% rename(total_reusable_cups = V1)
+reusable_fnb_cups_summed$month <- factor(reusable_fnb_cups_summed$month, levels = reusable_fnb_cups_summed$month)
+reusable_fnb_summed <- merge(x = reusable_fnb_summed, y = reusable_fnb_cups_summed, by = "month", all.x=TRUE)
+reusable_fnb_sb_cups <- search_terms %>% 
+  filter(grepl("reusable|reusables",Keywords)) %>% 
+  filter(grepl("starbucks",Keywords)) %>%
+    group_by(Keywords) %>%
+  summarise(`Feb 2019` = sum(`Search Volume (Feb 2019)`), 
+            `Mar 2019` = sum(`Search Volume (Mar 2019)`), 
+            `Apr 2019` = sum(`Search Volume (Apr 2019)`),
+            `May 2019` = sum(`Search Volume (May 2019)`),
+            `Jun 2019` = sum(`Search Volume (Jun 2019)`),
+            `Jul 2019` = sum(`Search Volume (Jul 2019)`),
+            `Aug 2019` = sum(`Search Volume (Aug 2019)`),
+            `Sep 2019` = sum(`Search Volume (Sep 2019)`),
+            `Oct 2019` = sum(`Search Volume (Oct 2019)`),
+            `Nov 2019` = sum(`Search Volume (Nov 2019)`),
+            `Dec 2019` = sum(`Search Volume (Dec 2019)`),
+            `Jan 2020` = sum(`Search Volume (Jan 2020)`))
+reusable_fnb_sb_cups_summed <- reusable_fnb_sb_cups %>% 
+  summarise(`Feb 2019` = sum(`Feb 2019`), 
+            `Mar 2019` = sum(`Mar 2019`), 
+            `Apr 2019` = sum(`Apr 2019`),
+            `May 2019` = sum(`May 2019`),
+            `Jun 2019` = sum(`Jun 2019`),
+            `Jul 2019` = sum(`Jul 2019`),
+            `Aug 2019` = sum(`Aug 2019`),
+            `Sep 2019` = sum(`Sep 2019`),
+            `Oct 2019` = sum(`Oct 2019`),
+            `Nov 2019` = sum(`Nov 2019`),
+            `Dec 2019` = sum(`Dec 2019`),
+            `Jan 2020` = sum(`Jan 2020`))
+reusable_fnb_sb_cups_summed <- as.data.frame(t(reusable_fnb_sb_cups_summed))
+reusable_fnb_sb_cups_summed <- cbind(month = rownames(reusable_fnb_sb_cups_summed), reusable_fnb_sb_cups_summed)
+reusable_fnb_sb_cups_summed <- reusable_fnb_sb_cups_summed %>% rename(total_reusable_sb_cups = V1)
+reusable_fnb_sb_cups_summed$month <- factor(reusable_fnb_sb_cups_summed$month, levels = reusable_fnb_sb_cups_summed$month)
+reusable_fnb_summed <- merge(x = reusable_fnb_summed, y = reusable_fnb_sb_cups_summed, by = "month", all.x=TRUE)
+new_data <- read.csv("reusable_fnb_summed.csv")
+levels(new_data$month)
+new_data$Month <- factor(new_data$Month, levels = c("Feb-19", "Mar-19", "Apr-19", "May-19", "Jun-19", "Jul-19", "Aug-19", "Sep-19", "Oct-19", "Nov-19", "Dec-19", "Jan-20"))
+```
+
+```{r Mindset and Behavior, include=FALSE}
+summed_category <- search_terms_2 %>%
+  group_by(Category) %>% 
+   summarise(`Feb 2019` = sum(`Feb-19`), 
+            `Mar 2019` = sum(`Mar-19`),
+            `Apr 2019` = sum(`Apr-19`),
+            `May 2019` = sum(`May-19`),
+            `Jun 2019` = sum(`Jun-19`),
+            `Jul 2019` = sum(`Jul-19`),
+            `Aug 2019` = sum(`Aug-19`),
+            `Sep 2019` = sum(`Sep-19`),
+            `Oct 2019` = sum(`Oct-19`),
+            `Nov 2019` = sum(`Nov-19`),
+            `Dec 2019` = sum(`Dec-19`),
+            `Jan 2020` = sum(`Jan-20`))
+new_summed <- read.csv('summed_category.csv')
+```
+
+#### Introduction 
+
+Singaporeans enjoy using plastics. 
+
+It is so embedded in our everyday life from shampoo packaging to food takeaways. However, such convenience has a price to pay. We are filling up our only waste landfill, Pulau Semakau with mainly plastic waste Single-use Plastics (SUPs henceforth), which will take at least 1,000 years to decompose. Government and community initiatives alike have grown over the years to highlight this consequence to both the general Singapore society as well as industry players. Nudges towards a more sustainable lifestyle, with year-long campaigns such as the Year Towards Zero Waste and the first Climate Rally held in September 2019 show a commitment towards a more environmentally sustainable Singapore.
+
+Why then do we continue to use SUPs? Importantly in our study, we focus our research on the usage of SUPs for Food and Beverage (F&B) takeaways. We employ big data drawn from Google Search terms from February 2019 to January 2020 to examine and analyse the roles different actors play in effecting a shift towards adopting more environmentally sustainable practices. Specifically, we look at the use of reusable for takeaways among Singaporeans. 
+Through our research, we find that there is a possibility that Singaporeans are starting to contemplate alternatives to SUPs, with special attention paid to beverage containers. 
+
+
+
+#### Key Findings
+
+**1. Singaporeans are looking for tangible actions they can take around SUPs. **
+
+The time series chart shows the number of SUP-related searches by different categories. At the ‘Awareness’ level, people are only keen to find out general information about SUPs. At the ‘Consideration’ level, they begin to contemplate the seriousness of the problem. At the ‘Action’ stage, they are eager to do something about it. Which stage are you at in your thoughts about SUPs?
+
+```{r Graph 2, echo=FALSE}
+hc_framework <- highchart() %>%
+  hc_title(text = "Time Series Analysis of Behaviour Stages From Google Search Data") %>% 
+  hc_subtitle(text = "From February 2019 to January 2020") %>% 
+  hc_chart(type = "column") %>% 
+  hc_xAxis(categories = c("Feb-19", "Mar-19", "Apr-19", "May-19", "Jun-19","Jul-19","Aug-19","Sep-19","Oct-19","Nov-19","Dec-19","Jan-20")) %>% 
+  hc_yAxis(title = list(text = "Number of Searches")) %>% 
+  hc_add_series(name = "Action", data = c(4990,5930,8310,9200,9270,11170,9980,16600,8730,12080,9260,6620)) %>% 
+  hc_add_series(name="Awareness", data = c(1700,1880,2240,2250,2150,11,2310,3310,3350,2720,1610,2750)) %>% 
+  hc_add_series(name="Consideration", data = c(270,240,360,390,280,11,390,500,490,450,190,460)) %>%
+  hc_plotOptions(series = list(stacking = "normal")) %>% 
+  hc_xAxis(title = list(text = "Month")) %>%
+  hc_add_theme(royal)
+
+hc_framework
+```
+
+**2. Singaporeans are seeking alternatives to SUPs**
+
+Here, we see that most searches for SUPs are related to alternatives. These alternatives include searches for reusables and solutions to SUPs. This is consistent with their desire to take action and would be a significant milestone for a nation that is addicted to SUPs.
+
+
+```{r Graph 1, echo=FALSE, message=FALSE, warning=FALSE}
+hchart(new_summed, "line", hcaes(x = Month, y = Count, group = Category),
+       color = c("#9A8822", "#E1BD6D", "#899DA4", "#C93312")) %>% 
+  hc_title(
+    text = "SUPs-related Google Search Terms by Category") %>% 
+  hc_subtitle(text = "From February 2019 to January 2020") %>%
+  hc_tooltip(table = TRUE, sort = TRUE) %>%
+  hc_yAxis(title = list(text = "Number of Searches")) %>%
+  hc_add_theme(royal)
+```
+
+**3. Beverage containers are the most popular F&B reusable item amongst Singaporeans**
+
+Search results were dominated by beverage container-related searches. Perhaps, Singaporeans are quite used to bringing reusable water bottles and tumblers with them, that they do not have to re-establish a new habit of doing so. These beverage containers are also much easier and convenient to wash as compared to food containers and cutlery, which were the least popular reusable items. 
+
+```{r Graph 3, echo=FALSE, message=FALSE, warning=FALSE}
+hc <- highchart() %>%
+  hc_title(text = "Time Series Analysis of F&B Reusables by Category") %>% 
+  hc_subtitle(text = "From February 2019 to January 2020") %>% 
+  hc_chart(type = "column") %>% 
+  hc_xAxis(categories = c("Feb-19", "Mar-19", "Apr-19", "May-19", "Jun-19","Jul-19","Aug-19","Sep-19","Oct-19","Nov-19","Dec-19","Jan-20")) %>% 
+  hc_yAxis(title = list(text = "Number of Searches")) %>% 
+  hc_add_series(name = "Bags/Carriers", data = c(1460, 1680, 1920, 2210, 2030,2790,2490,3160,2740,3040,2570,2420)) %>% 
+  hc_add_series(name="Beverage Containers", data = c(1220,1670,3870,4140,3760,4720,4130,9770,2940,5980,3850,1970)) %>% 
+  hc_add_series(name="Cutlery", data = c(10,50,40,40,110,90,70,70,50,50,70,90)) %>%
+  hc_add_series(name="Food Containers", data=c(150,260,330,270,340,430,500,480,440,520,370,350)) %>% 
+  hc_add_series(name="Straws", data=c(1380,1350,1400,1710,2310,2240,1990,2040,1410,1170,1160,680)) %>% 
+  hc_xAxis(title = list(text = "Month")) %>%
+  hc_chart(type = "column") %>% 
+  hc_plotOptions(series = list(stacking = "normal")) %>% 
+  hc_add_theme(royal)
+hc
+```
+
+**4. Surprise! Starbucks is driving this trend.**
+
+Although sustainability behaviours are often thought to follow the top-down approach, which is common in Singapore, our results showed us that there are bigger motivating factors when it comes to switching from SUPs to reusables. Zooming into searches for beverage containers alone, we find that searches for Starbucks reusable cups dominate the searches. Why is that so?
+
+Well, Singaporeans love their discounts! Starbucks offers a 50-cent discount if one brings their own reusable tumbler. Furthermore, for each purchase of a Starbucks reusable tumbler or cup, one is entitled to a free drink of any size. The peak in September 2019 also coincides with Starbucks’ giveaway of a free reusable tumbler. Who doesn’t love freebies?
+
+```{r Graph of 4, echo=FALSE, message=FALSE, warning=FALSE}
+new_hc <- highchart() %>%
+  hc_title(text = "Time Series Comparison of Google Searches for Starbucks and non-Starbucks Reusable Cups") %>% 
+  hc_subtitle(text = "From February 2019 to January 2020") %>% 
+  hc_chart(type = "area") %>% 
+  hc_xAxis(categories = c("Feb-19", "Mar-19", "Apr-19", "May-19", "Jun-19","Jul-19","Aug-19","Sep-19","Oct-19","Nov-19","Dec-19","Jan-20")) %>% 
+  hc_yAxis(title = list(text = "Number of Searches")) %>% 
+  hc_xAxis(title = list(text = "Month")) %>% 
+  hc_add_series(name="Total Searches for Reusable Cups", data = c(990,1420,4590,3820,3480,4400,3840,9410,2640,5720,3570,1690)) %>%
+  hc_add_series(name="Starbucks Reusable Cups", data = c(140,220,2010,2000,1440,2010,1770,7200,960,3800,2010,520)) %>% 
+  hc_add_series(name="Non-Starbucks Reusable Cups", data = c(850,1200,1580,1820,2040,2390,2070,2210,1680,1920,1560,1170)) %>%
+  hc_chart(type = "area") %>% 
+  hc_plotOptions(series = list(stacking = "normal")) %>% 
+  hc_add_theme(royal)
+new_hc
+```
+
+#### Small acts build large meaning!
+
+Are we truly then only attracted by promotions and discounts? The Year of Zero Waste may have come and gone, but that has not stopped efforts towards reducing our plastic footprint. With the Resource Sustainability Bill and BYO Singapore, NGOs, commercial retailers and the government are collaborating to ensure the fight against SUPs is reaching the frontlines: us! With over 1097 outlets (and growing!) from 127 brands, the call to action comes to Singaporeans, both young and old. No step is too small to take, in saying yes to reusables and no to disposables. Be it with or without the freebies, are we ready to say yes to waste less?
+
